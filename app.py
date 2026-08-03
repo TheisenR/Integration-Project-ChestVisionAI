@@ -25,20 +25,24 @@ import base64
 
 
 app = Flask(__name__)
-app.secret_key = '1234'  # Needed for flash messages and sessions
+app.secret_key = os.getenv('SECRET_KEY', 'change-me-in-production')  # Needed for flash messages and sessions
 
 # Database connection config
 db_config = {
-     'host': 'localhost',
-    'user': 'root',
-    'password': 'test1234',
-    'database': 'DeepChest'
+    'host': os.getenv('DB_HOST', 'localhost'),
+    'user': os.getenv('DB_USER', 'root'),
+    'password': os.getenv('DB_PASSWORD', 'test1234'),
+    'database': os.getenv('DB_NAME', 'DeepChest')
 }
 
 # Configures Route for the home page
 @app.route('/')
 def home():
     return render_template('index.html', username=session.get('username'))
+
+@app.route('/health')
+def health():
+    return jsonify(status='ok')
 
 # Configures Route for the login page 
 @app.route('/login', methods=['GET', 'POST'])
@@ -3221,4 +3225,4 @@ def clinic_delete_user():
     return redirect(url_for('clinic_manage_accounts'))
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=int(os.getenv('PORT', 5000)), debug=False)
