@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Browser Tab Title -->
+    <title>Login - DeepChest</title>
+    <link rel="stylesheet" href="/static/style.css" />
+    <link rel="stylesheet" href="/static/logostyle.css" />
+  </head>
+  <!-- Main body content, fields for username and password to log users in -->
+  <body>
+   <nav>
+      <div class="logo">
+        <a href="/"
+          ><img
+            src="{{ url_for('static', filename='logo_DeepChest.png') }}"
+            class="logo-img"
+        /></a>
+        <div class="logo-text">DeepChest</div>
+      </div>
+    
+    </nav>
+
+    {% block content %}
+    <!-- Account Created message handling -->
+    {% with messages = get_flashed_messages() %} {% if messages %} {% for
+    message in messages %}
+    <script>
+      alert("{{ message }}");
+    </script>
+    {% endfor %} {% endif %} {% endwith %}
+    <div class="login-content">
+      <h1>Login</h1>
+      <p>Sign in to continue</p>
+      <form method="POST" action="/login" class="login-form">
+        <input type="text" name="username" placeholder="Username" required />
+        <input
+          type="password"
+          name="password"
+          placeholder="Password"
+          required
+        />
+        <button type="submit">Login</button>
+      </form>
+      <p>Don't have an account?</p>
+      <a href="/signup">
+        <button type="button" class="signup-btn"> Patient Sign Up</button>
+      </a>
+      <a href="/clinic_signup">
+        <button type="button" class="signup-btn"> Clinic Sign Up</button>
+      </a>
+    </div>
+    {% endblock %}
+  </body>
+</html>

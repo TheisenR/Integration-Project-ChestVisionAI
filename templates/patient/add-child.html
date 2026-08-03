@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Create Child Account - DeepChest</title>
+    <link rel="stylesheet" href="/static/style.css" />
+    <link rel="stylesheet" href="/static/patient.css" />
+    <link rel="stylesheet" href="/static/logostyle.css" />
+  </head>
+  <body>
+    <nav>
+      <div class="logo">
+        <a href="/patient_home"
+          ><img
+            src="{{ url_for('static', filename='logo_DeepChest.png') }}"
+            class="logo-img"
+        /></a>
+        <div class="logo-text">DeepChest</div>
+      </div>
+      <div class="nav-links">
+        <a href="/patient_home">Home</a>
+        <a href="/patient/appointments">Appointments</a>
+        <a href="/patient/reports">My Reports</a>
+        <a href="/patient/messages">Message</a>
+        <div class="dropdown">
+          <button class="dropbtn">Account &#9662;</button>
+          <div class="dropdown-content">
+            <a href="/patient/account">Manage Account</a>
+            <a href="/logout">Logout</a>
+          </div>
+        </div>
+      </div>
+    </nav>
+    <div class="patient-content">
+    <div class="addchild-content">
+      <h1>Add Child</h1>
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          <div class="flash-messages">
+            {% for msg in messages %}
+              <div class="flash">{{ msg }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <form method="POST" action="{{ url_for('add_child') }}" class="addchild-form">
+        <!-- Hidden fields populated from session -->
+  <input type="hidden" name="patientID" value="{{ patient.USERID if patient else '' }}" />
+  <input type="hidden" name="clinicID" value="{{ clinic.clinicID if clinic else '' }}" />
+  <input type="hidden" name="doctorID" value="{{ doctor.USERID if doctor else '' }}" />
+
+        <!-- Clinic and Doctor (prefilled from DB when available) -->
+        <div class="form-group">
+          <label for="clinic">Clinic</label>
+          <input
+            type="text"
+            id="clinic"
+            name="clinic"
+            placeholder="Clinic"
+            value="{% if clinic %}{{ clinic.city }}{% else %}{% endif %}"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="Doctor">Doctor</label>
+          <input
+            type="text"
+            id="Doctor"
+            name="Doctor"
+            placeholder="Doctor"
+            value="{% if doctor %}{{ doctor.firstName }} {{ doctor.lastName }}{% else %}{% endif %}"
+          />
+        </div>
+
+        <!-- Child details -->
+        <div class="form-group">
+          <label for="firstName">Child First Name</label>
+          <input type="text" id="firstName" name="firstName" placeholder="First Name" required />
+        </div>
+
+        <div class="form-group">
+          <label for="lastName">Child Last Name</label>
+          <input type="text" id="lastName" name="lastName" placeholder="Last Name" required />
+        </div>
+
+        <div class="form-group">
+          <label for="ParentName">Parent Name</label>
+          <input
+            type="text"
+            id="ParentName"
+            name="ParentName"
+            placeholder="Parent Name"
+            value="{% if patient %}{{ patient.firstName }} {{ patient.lastName }}{% else %}{% endif %}"
+            readonly
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="email">Child Email</label>
+          <input type="email" id="email" name="email" placeholder="Email" value="{% if patient and patient.email %}{{ patient.email }}{% else %}{% endif %}" />
+        </div>
+
+        <div class="form-group">
+          <label for="username">Child Username</label>
+          <input type="text" id="username" name="username" placeholder="Username" />
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" placeholder="Password" required />
+        </div>
+
+        <div class="form-group">
+          <label for="birthday">Birthday</label>
+          <input type="date" id="birthday" name="birthday" placeholder="Birthday" required />
+        </div>
+
+        <div class="form-group">
+          <label for="address">Address</label>
+          <input type="text" id="address" name="address" placeholder="Address" value="{% if patient %}{{ patient.address }}{% else %}{% endif %}" />
+        </div>
+
+        <div class="form-group">
+          <label for="city">City</label>
+          <input type="text" id="city" name="city" placeholder="City" value="{% if patient %}{{ patient.city }}{% else %}{% endif %}" />
+        </div>
+
+        <div class="form-group">
+          <label for="province">Province</label>
+          <input type="text" id="province" name="province" placeholder="Province" value="{% if patient %}{{ patient.province }}{% else %}{% endif %}" />
+        </div>
+
+        <div class="form-group">
+          <label for="postalCode">Postal Code</label>
+          <input type="text" id="postalCode" name="postalCode" placeholder="Postal Code" value="{% if patient %}{{ patient.postalCode }}{% else %}{% endif %}" />
+        </div>
+
+        <div class="form-group">
+          <label for="insurance">Insurance Provider</label>
+          <input type="text" id="insurance" name="insurance" placeholder="Insurance Provider" value="{% if patient %}{{ patient.insurance }}{% else %}{% endif %}" />
+        </div>
+
+        <!-- Submit button -->
+        <button type="submit" class="addchild-btn">Add Child</button>
+      </form>
+    </div>
+    </div>
+    </div>
+  </body>
+</html>

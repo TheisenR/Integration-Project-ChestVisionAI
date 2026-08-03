@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Clinic Admin Account Management - DeepChest</title>
+      <link rel="stylesheet" href="/static/style.css" />
+    <link rel="stylesheet" href="/static/admin.css"/>
+    <link rel="stylesheet" href="/static/logostyle.css" />
+    <!-- page-specific styles moved to /static/admin.css -->
+  </head>
+  <body>
+    <nav>
+      <div class="logo">
+        <a href="/admin_home"><img src="{{ url_for('static', filename='logo_DeepChest.png') }}" class="logo-img"/></a>
+        <div class="logo-text">DeepChest</div>
+      </div>
+      <div class="nav-links">
+        <a href="/admin_home">Home</a>
+        <a href="/admin/appointments">Appointments</a>
+        <a href="/admin/ManageAccount">Manage Account</a>
+        <a href="/admin/manage_reports">Manage Reports</a>
+        <div class="dropdown">
+          <button class="dropbtn">Account &#9662;</button>
+          <div class="dropdown-content">
+            <a href="/admin/manage_clinic">Manage Clinic</a>
+            <a href="/logout">Logout</a>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="center-content admin-content">
+      <div class="manage-header">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-messages">
+            {% for category, message in messages %}
+              <div class="alert {{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+        <h1>Manage Clinic Accounts</h1>
+        <p>Search, filter and manage doctor and patient accounts for this clinic.</p>
+      </div>
+
+      <div class="search-filter">
+        <!-- Search + Filter form: use GET so server can return filtered list -->
+        <form method="GET" action="{{ url_for('clinic_manage_accounts') }}">
+          <input
+            type="text"
+            name="query"
+            placeholder="Search by name or email"
+            class="report-search-bar"
+            value="{{ request.args.get('query','') }}"
+          />
+          <select name="filter" class="filter-select">
+            <option value="all" {% if request.args.get('filter','all') == 'all' %}selected{% endif %}>All</option>
+            <option value="doctors" {% if request.args.get('filter') == 'doctors' %}selected{% endif %}>Doctors</option>
+            <option value="patients" {% if request.args.get('filter') == 'patients' %}selected{% endif %}>Patients</option>
+          </select>
+          <button type="submit" class="report-search-btn">Search</button>
+        </form>
+      </div>
+
+      <!-- Accounts list -->
+      <div class="manage-table-container">
+        <table class="search-table">
+          <thead>
+            <tr>
+              <th style="width:10%;">Type</th>
+              <th style="width:35%;">Name</th>
+              <th style="width:30%;">Email</th>
+              <th style="width:25%;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if accounts %}
+              {% for acct in accounts %}
+                <tr>
+                  <td>{{ acct.userType|capitalize }}</td>
+                  <td>{{ acct.firstName }} {{ acct.lastName }}</td>
+                  <td>{{ acct.email }}</td>
+                  <td>
+                    <a class="manage-btn" href="{{ url_for('clinic_manage_user', user_id=acct.id) }}">Manage</a>
+
+                    <form method="POST" action="{{ url_for('clinic_delete_user') }}" class="inline-form" onsubmit="return confirmDelete(this);">
+                      <input type="hidden" name="user_id" value="{{ acct.id }}" />
+                      <button type="submit" class="delete-btn">Delete</button>
+                    </form>
+                  </td>
+                </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td colspan="4" style="text-align:center; padding:18px 0;">No accounts found.</td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <script>
+      // Confirm delete; can be enhanced to use modal
+      function confirmDelete(form) {
+        return confirm('Are you sure you want to delete this account? This action cannot be undone.');
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Doctor Reports - DeepChest</title>
+    <link rel="stylesheet" href="/static/style.css" />
+    <link rel="stylesheet" href="/static/doctor.css" />
+    <link rel="stylesheet" href="/static/logostyle.css" />
+  </head>
+  <body>
+    <nav>
+      <div class="logo">
+        <a href="/"
+          ><img
+            src="{{ url_for('static', filename='logo_DeepChest.png') }}"
+            class="logo-img"
+        /></a>
+        <div class="logo-text">DeepChest</div>
+      </div>
+      <div class="nav-links">
+        <a href="/doctor_home">Home</a>
+        <a href="/doctor/appointments">Appointments</a>
+        <a href="/doctor/patients">My Patients</a>
+        <a href="#">Reports</a>
+        <a href="/doctor/ai_diagnosis">AI Diagnosis</a>
+        <div class="dropdown">
+          <button class="dropbtn">Account &#9662;</button>
+          <div class="dropdown-content">
+            <a href="/doctor/account">Manage Account</a>
+            <a href="/logout">Logout</a>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="doctor-page-content">
+      <h1>Reports</h1>
+      <p>View and upload diagnostic reports here.</p>
+
+      <h2>Your Patient Reports</h2>
+
+      <div class="report-search-bar-container">
+        <form method="GET" action="/doctor/search_reports">
+          <input
+            type="text"
+            name="query"
+            class="report-search-bar"
+            placeholder="Search for specific reports..."
+            autocomplete="off"
+          />
+          <button type="submit" class="report-search-btn">Search</button>
+        </form>
+      </div>
+
+
+      {% if reports %}
+      <table class="search-table">
+        <thead>
+          <tr>
+            <th>Report ID</th>
+            <th>Report Date</th>
+            <th>Patient Name</th>
+            <th>File</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for report in reports %}
+          <tr>
+            <td>{{ report.reportID }}</td>
+            <td>{{ report.reportDate }}</td>
+            <td>{{ report.firstName }} {{ report.lastName }}</td>
+            <td>
+              {% if report.files %}
+                <a href="{{ url_for('view_report', report_id=report.reportID) }}" class="file-link" target="_blank">
+                  View Report
+                </a>
+              {% else %}
+                <em>No file uploaded</em>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+        <p class="no-data">No reports available yet.</p>
+      {% endif %}
+    </div>
+
+    </div>
+  </body>
+</html>

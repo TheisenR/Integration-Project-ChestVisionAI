@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Patient Home - DeepChest</title>
+    <link rel="stylesheet" href="/static/style.css" />
+    <link rel="stylesheet" href="/static/patient.css" />
+    <link rel="stylesheet" href="/static/logostyle.css" />
+  </head>
+  <body>
+    <nav>
+      <div class="logo">
+        <a href="#"
+          ><img
+            src="{{ url_for('static', filename='logo_DeepChest.png') }}"
+            class="logo-img"
+        /></a>
+        <div class="logo-text">DeepChest</div>
+      </div>
+      <div class="nav-links">
+        <a href="#">Home</a>
+        <a href="/patient/appointments">Appointments</a>
+         <a href="/patient/reports">My Reports</a> 
+          <a href="/patient/messages">Message</a>
+        <div class="dropdown">
+          <button class="dropbtn">Account &#9662;</button>
+          <div class="dropdown-content">
+            <a href="/patient/account">Manage Account</a>
+            <a href="/logout">Logout</a>
+          </div>
+        </div>
+      </div>
+    </nav>
+    <div class="patient-home-content">
+      <h1>Welcome, {{ firstName }} {{ lastName }}!</h1>
+ 
+      <div class="search-bar-container">
+        <form method="GET" action="/search">
+          <input
+            type="text"
+            name="query"
+            class="search-bar"
+            placeholder="Search for appointments, or reports..."
+            autocomplete="off"
+          />
+          <button type="submit" class="search-btn">Search</button>
+        </form>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Manage Appointment - DeepChest</title>
+    <link rel="stylesheet" href="/static/style.css" />
+    <link rel="stylesheet" href="/static/admin.css" />
+    <link rel="stylesheet" href="/static/logostyle.css" />
+  </head>
+  <body>
+    <nav>
+      <div class="logo">
+        <a href="/admin_home">
+          <img src="{{ url_for('static', filename='logo_DeepChest.png') }}" class="logo-img" />
+        </a>
+        <div class="logo-text">DeepChest</div>
+      </div>
+      <div class="nav-links">
+        <a href="/admin_home">Home</a>
+        <a href="/admin/appointments">Appointments</a>
+        <a href="/admin/ManageAccount">Manage Accounts</a>
+        <a href="/admin/manage_reports">Manage Reports</a>
+        <div class="dropdown">
+          <button class="dropbtn">Account &#9662;</button>
+          <div class="dropdown-content">
+            <a href="/admin/manage_clinic">Manage Clinic</a>
+            <a href="/logout">Logout</a>
+          </div>
+        </div>
+      </div>
+    </nav>
+    <div class="admin-content">
+      <h1>Manage Appointment</h1>
+      <div class="booking-grid">
+        <div class="calendar-panel">
+          <h3>SELECT DATE</h3>
+          <div id="calendar" class="calendar-container"></div>
+        </div>
+
+        <div class="info-panel">
+          <h3>APPOINTMENT INFO</h3>
+          <form id="edit-appt-form" method="POST" action="{{ url_for('admin_manage_appointment', appointment_id=appointment.apptID) }}">
+            <div class="form-row">
+              <label class="book-form-label">Patient:</label>
+              <input type="text" readonly class="book-form-input" value="{{ appointment.patientFirstName }} {{ appointment.patientLastName }}" />
+            </div>
+
+            <div class="form-row">
+              <label class="book-form-label">Doctor:</label>
+              <input type="text" readonly class="book-form-input" value="{{ appointment.doctorFirstName or 'Not Assigned' }} {{ appointment.doctorLastName or '' }}" />
+            </div>
+
+            <div class="form-row">
+              <label class="book-form-label">Date:</label>
+              <input type="text" id="selected-date" name="appointment_date" readonly class="book-form-input" placeholder="Select a date" value="{{ appointment.appointment_date }}" />
+            </div>
+
+            <div class="form-row">
+              <label class="book-form-label">Time:</label>
+              <div id="timeslots" class="timeslots"></div>
+              <input type="hidden" id="selected-time" name="appointment_time" value="{{ appointment.appointment_time }}" />
+            </div>
+
+            <div class="form-row">
+              <label class="book-form-label">Symptoms:</label>
+              <textarea name="symptoms" id="symptoms" rows="4" class="book-form-textarea">{{ appointment.symptoms }}</textarea>
+            </div>
+
+            <div class="form-row form-actions">
+              <button type="submit" id="save-appt-btn" class="book-btn">Save Changes</button>
+              <a href="{{ url_for('admin_appointments') }}" class="book-btn" style="background:#aaa; margin-left:8px; text-decoration:none; display:inline-block; padding:10px 14px;">Cancel</a>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <script>
+        document.addEventListener('DOMContentLoaded', ()=>{
+          // Appointment data passed via data attributes
+          const apptDate = document.getElementById('selected-date').value;
+          const apptTime = document.getElementById('selected-time').value;
+
+          const times = ['09:00:00','09:30:00','10:00:00','10:30:00','11:00:00','11:30:00','13:00:00','13:30:00','14:00:00','14:30:00','15:00:00','15:30:00'];
+          const timeslotsEl = document.getElementById('timeslots');
+          const selectedTimeInput = document.getElementById('selected-time');
+          const selectedDateInput = document.getElementById('selected-date');
+
+          function renderTimeSlots() {
+            timeslotsEl.innerHTML = '';
+            times.forEach(t => {
+              const btn = document.createElement('button');
+              btn.type = 'button';
+              btn.className = 'timeslot-btn';
+              btn.textContent = t.slice(0,5);
+              // preselect if matches appointment time
+              if(apptTime && t.startsWith(apptTime.slice(0,5))) {
+                btn.classList.add('selected');
+                selectedTimeInput.value = t;
+              }
+              btn.addEventListener('click', () => {
+                document.querySelectorAll('.timeslot-btn').forEach(b=>b.classList.remove('selected'));
+                btn.classList.add('selected');
+                selectedTimeInput.value = t;
+              });
+              timeslotsEl.appendChild(btn);
+            });
+          }
+
+          function buildCalendar(container) {
+            const today = new Date();
+            let month = today.getMonth();
+            let year = today.getFullYear();
+
+            function render() {
+              container.innerHTML = '';
+              const header = document.createElement('div');
+              header.className = 'calendar-header';
+              const monthName = new Date(year, month, 1).toLocaleString('default',{month:'long'});
+              header.innerHTML = `<button id="prev-month">&lt;</button> <strong>${monthName} ${year}</strong> <button id="next-month">&gt;</button>`;
+              container.appendChild(header);
+
+              const table = document.createElement('table');
+              table.className = 'calendar-table';
+              const days = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+              const thead = document.createElement('thead');
+              thead.innerHTML = '<tr>' + days.map(d=>`<th>${d}</th>`).join('') + '</tr>';
+              table.appendChild(thead);
+
+              const first = new Date(year, month, 1);
+              const startDay = first.getDay();
+              const daysInMonth = new Date(year, month+1, 0).getDate();
+
+              const tbody = document.createElement('tbody');
+              let row = document.createElement('tr');
+              for(let i=0;i<startDay;i++) row.innerHTML += '<td></td>';
+              for(let d=1; d<=daysInMonth; d++){
+                if(row.children.length===7){ tbody.appendChild(row); row=document.createElement('tr'); }
+                const cell = document.createElement('td');
+                cell.className = 'calendar-cell';
+                cell.textContent = d;
+                const iso = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                // mark if it's the appointment date
+                if(apptDate === iso){
+                  cell.classList.add('appointment-mark');
+                  cell.classList.add('selected');
+                }
+                cell.addEventListener('click', ()=>{
+                  selectedDateInput.value = iso;
+                  // reset timeslots and then fetch booked times to disable unavailable ones
+                  selectedTimeInput.value = '';
+                  document.querySelectorAll('.timeslot-btn').forEach(b=>{b.classList.remove('selected'); b.disabled = false; b.classList.remove('disabled');});
+                  fetch(`/patient/booked_times?date=${iso}`)
+                    .then(r=>r.text())
+                    .then(text=>{
+                      const booked = text ? text.split(',') : [];
+                      document.querySelectorAll('.timeslot-btn').forEach(b=>{
+                        const tt = b.textContent.trim();
+                        const ttss = tt + ':00';
+                        // allow the current appointment's time even if booked
+                        if(booked.includes(ttss) && ttss !== apptTime){
+                          b.disabled = true;
+                          b.classList.add('disabled');
+                        }
+                      });
+                    }).catch(()=>{});
+                });
+                row.appendChild(cell);
+              }
+              while(row.children.length<7) row.innerHTML += '<td></td>';
+              tbody.appendChild(row);
+              table.appendChild(tbody);
+              container.appendChild(table);
+
+              header.querySelector('#prev-month').addEventListener('click', ()=>{ month = month-1; if(month<0){ month=11; year--; } render(); });
+              header.querySelector('#next-month').addEventListener('click', ()=>{ month = month+1; if(month>11){ month=0; year++; } render(); });
+            }
+            render();
+          }
+
+          renderTimeSlots();
+          buildCalendar(document.getElementById('calendar'));
+
+          // if appointment date exists, pre-select it and fetch booked times so UI shows unavailable slots
+          if(apptDate){
+            // trigger the same logic as clicking the date: fetch booked times and disable them
+            fetch(`/patient/booked_times?date=${apptDate}`)
+              .then(r=>r.text())
+              .then(text=>{
+                const booked = text ? text.split(',') : [];
+                document.querySelectorAll('.timeslot-btn').forEach(b=>{
+                  const tt = b.textContent.trim();
+                  const ttss = tt + ':00';
+                  if(booked.includes(ttss) && ttss !== apptTime){
+                    b.disabled = true;
+                    b.classList.add('disabled');
+                  }
+                });
+              }).catch(()=>{});
+          }
+
+          // client-side validation: ensure date+time selected before submit
+          const form = document.getElementById('edit-appt-form');
+          form.addEventListener('submit', (e)=>{
+            const dateVal = document.getElementById('selected-date').value;
+            const timeVal = document.getElementById('selected-time').value;
+            if(!dateVal || !timeVal){
+              e.preventDefault();
+              alert('Please select a date and time before saving.');
+            }
+          });
+        });
+      </script>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,29 @@
+sudo tee /etc/systemd/system/deepchest.service >/dev/null <<'UNIT'
+[Unit]
+Description=Gunicorn for DeepChest (Flask)
+After=network.target
+
+[Service]
+User=ec2-user
+Group=nginx
+WorkingDirectory=/home/ec2-user/app
+Environment="PATH=/home/ec2-user/app/.venv/bin"
+#En vars for Flask + RDS
+Environment="FLASK_ENV=production"
+Environment="SECRET_KEY=super-secret-I-guess"
+Environment="DB_HOST=mysql-database.cjogeuu2gnn5.ca-central-1.rds.amazonaws.com"
+Environment="DB_USER=admin"
+Environment="DB_PASSWORD=AdminIPA"
+Environment="DB_NAME=DeepChest_DB"
+
+UMask=007
+ExecStart=/home/ec2-user/app/.venv/bin/gunicorn \
+  --workers 3 \
+  --bind unix:/home/ec2-user/app/app.sock \
+  app:app
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+UNIT

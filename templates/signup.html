@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Browesr tab bar Title -->
+    <title>Sign Up - DeepChest</title>
+    <!-- Linking Stylesheet -->
+    <link rel="stylesheet" href="/static/style.css" />
+    <link rel="stylesheet" href="/static/logostyle.css" />
+  </head>
+  <body>
+    <nav>
+      <div class="logo">
+        <a href="/"
+          ><img
+            src="{{ url_for('static', filename='logo_DeepChest.png') }}"
+            class="logo-img"
+        /></a>
+        <div class="logo-text">DeepChest</div>
+      </div>
+    
+    </nav>
+    {% block content %}
+    <!-- Main body content: form for signing up -->
+    <div class="signup-content">
+      <h1>Sign Up</h1>
+      <form method="POST" action="/signup" class="signup-form">
+        <!-- Clinic dropdown -->
+        <select name="clinicID" required>
+          <option value="" disabled selected>Select Clinic</option>
+          {% for clinic in clinics %}
+          <option value="{{ clinic.clinicID }}">
+            {{ clinic.clinicID }} ({{ clinic.city }}, {{ clinic.province }})
+          </option>
+          {% endfor %}
+        </select>
+        <!-- Doctor dropdown -->
+        <select name="doctorID" required>
+          <option value="" disabled selected>Select Doctor</option>
+          {% for doctor in doctors %}
+          <option value="{{ doctor.USERID }}">
+            Dr. {{ doctor.firstName }} {{ doctor.lastName }} (Clinic: {{
+            doctor.clinicID }})
+          </option>
+          {% endfor %}
+        </select>
+        <input type="text" name="firstName" placeholder="First Name" required />
+        <input type="text" name="lastName" placeholder="Last Name" required />
+        <input type="email" name="email" placeholder="Email" required />
+        <input
+          type="text"
+          name="phoneNumber"
+          placeholder="Phone Number"
+          required
+        />
+        <input
+          type="password"
+          name="password"
+          placeholder="Password"
+          required
+        />
+        <!-- Birthday date picker -->
+        <input type="date" name="birthday" placeholder="Birthday" required />
+        <input type="text" name="address" placeholder="Address" required />
+        <input type="text" name="city" placeholder="City" required />
+        <input type="text" name="province" placeholder="Province" required />
+        <input
+          type="text"
+          name="postalCode"
+          placeholder="Postal Code"
+          required
+        />
+        <input
+          type="text"
+          name="insurance"
+          placeholder="Insurance Provider"
+          required
+        />
+        <!-- Notification opt-in -->
+        <div style="grid-column: 1 / -1; padding: 10px 0;">
+          <label style="font-weight: bold; margin-bottom: 10px; display: block; text-align: center;">Enable Notifications:</label>
+          <div style="display: flex; gap: 20px; justify-content: center;">
+            <label style="cursor: pointer;">
+              <input type="radio" name="notifications_enabled" value="1" required />
+              Yes
+            </label>
+            <label style="cursor: pointer;">
+              <input type="radio" name="notifications_enabled" value="0" required />
+              No
+            </label>
+          </div>
+        </div>
+        <!-- Submit button -->
+        <button type="submit" class="signup-btn">Sign Up</button>
+      </form>
+    </div>
+    {% endblock %}
+  </body>
+</html>

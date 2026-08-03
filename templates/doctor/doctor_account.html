@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Doctor Account - DeepChest</title>
+    <link rel="stylesheet" href="/static/style.css" />
+    <link rel="stylesheet" href="/static/logostyle.css" />
+    <link rel="stylesheet" href="/static/doctor.css" />
+  </head>
+  <body>
+    <nav>
+      <div class="logo">
+        <a href="/"
+          ><img
+            src="{{ url_for('static', filename='logo_DeepChest.png') }}"
+            class="logo-img"
+        /></a>
+        <div class="logo-text">DeepChest</div>
+      </div>
+      <div class="nav-links">
+        <a href="/doctor_home">Home</a>
+        <a href="/doctor/appointments">Appointments</a>
+        <a href="/doctor/patients">My Patients</a>
+        <a href="/doctor/reports">Reports</a>
+        <a href="/doctor/ai_diagnosis">AI Diagnosis</a>
+        <div class="dropdown">
+          <button class="dropbtn">Account &#9662;</button>
+          <div class="dropdown-content">
+            <a href="#">Manage Account</a>
+            <a href="/logout">Logout</a>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="doctor-page-content">
+      <h1>Manage Account</h1>
+      <p>Update your personal details and preferences here.</p>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}DeepChest{% endblock %}</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='logostyle.css') }}"
+    />
+  </head>
+  <body>
+    <!-- Navigation bar setup with logo -->
+    <nav>
+      <div class="logo">
+        <a href="/"
+          ><img
+            src="{{ url_for('static', filename='logo_DeepChest.png') }}"
+            class="logo-img"
+        /></a>
+        <div class="logo-text">DeepChest</div>
+      </div>
+      <div class="nav-links">
+        <a href="/login">Login</a>
+        <div class="dropdown">
+          <button class="dropbtn">Create Account &#9662;</button>
+          <div class="dropdown-content">
+            <a href="/signup">New Patient Signup</a>
+            <a href="/clinic_signup">New Clinic Signup</a>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages() %} {% if messages %} {% for
+    message in messages %}
+    <script>
+      alert("{{ message }}");
+    </script>
+    {% endfor %} {% endif %} {% endwith %}
+
+    <!-- Child templates inject here -->
+    {% block content %}{% endblock %}
+  </body>
+</html>

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Title shown on browser tab -->
+    <title>DeepChest</title>
+    <!-- linking stylesheet to this html file -->
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <!-- Logout message handling -->
+    {% with messages = get_flashed_messages() %} {% if messages %} {% for
+    message in messages %}
+    <script>
+      alert("{{ message }}");
+    </script>
+    {% endfor %} {% endif %} {% endwith %}
+    <!-- Navigation bar setup with logo -->
+   {% extends "navigationbase.html" %}
+    <!-- Main body content -->
+     {% block title %}DeepChest - Home{% endblock %}
+
+{% block content %}
+    <div class="main-content">
+      <div class="left-content">
+        <h1>Welcome to DeepChest!</h1>
+        <p>
+          DeepChest is an AI-powered web application that helps healthcare
+          providers analyze chest X-rays quickly and accurately. By combining
+          advanced deep learning with intuitive design, DeepChest detects
+          conditions like pneumonia, tuberculosis, and COVID-19 while generating
+          heatmaps to highlight areas of concern. Designed for clinics, doctors,
+          and patients, the platform enables secure uploads, instant AI-assisted
+          predictions, and report generation with role-based access for data
+          privacy. DeepChest empowers smaller clinics, remote healthcare
+          providers, and medical learners with a cost-effective, accessible
+          diagnostic support tool—helping reduce wait times and improve early
+          treatment outcomes.
+        </p>
+      </div>
+      <div class="right-content">
+        <img src="/static/homexray.jpg" alt="Chest X-ray Example" />
+      </div>
+    </div>
+    {% endblock %}
+  </body>
+</html>

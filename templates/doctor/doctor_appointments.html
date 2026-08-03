@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Doctor Appointments - DeepChest</title>
+    <link rel="stylesheet" href="/static/style.css" />
+    <link rel="stylesheet" href="/static/doctor.css" />
+    <link rel="stylesheet" href="/static/logostyle.css" />
+  </head>
+  <body>
+    <nav>
+      <div class="logo">
+        <a href="/"
+          ><img
+            src="{{ url_for('static', filename='logo_DeepChest.png') }}"
+            class="logo-img"
+        /></a>
+        <div class="logo-text">DeepChest</div>
+      </div>
+      <div class="nav-links">
+        <a href="/doctor_home">Home</a>
+        <a href="#">Appointments</a>
+        <a href="/doctor/patients">My Patients</a>
+        <a href="/doctor/reports">Reports</a>
+        <a href="/doctor/ai_diagnosis">AI Diagnosis</a>
+        <div class="dropdown">
+          <button class="dropbtn">Account &#9662;</button>
+          <div class="dropdown-content">
+            <a href="/doctor/account">Manage Account</a>
+            <a href="/logout">Logout</a>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="doctor-page-content">
+      <h1>Your Appointments</h1>
+      <p>Here you can view and manage all your appointments.</p>
+
+
+      <div class="report-search-bar-container">
+        <form method="GET" action="/doctor/search_appointments">
+          <input
+            type="text"
+            name="query"
+            class="report-search-bar"
+            placeholder="Search for specific appointments..."
+            autocomplete="off"
+          />
+          <button type="submit" class="report-search-btn">Search</button>
+        </form>
+      </div>
+
+      {% if appointments %}
+      <table class="search-table">
+        <tr>
+          <th>Date</th>
+          <th>Time</th>
+          <th>Patient</th>
+          <th>Symptoms</th>
+          <th>Action</th>
+        </tr>
+        {% for appt in appointments %}
+        <tr>
+          <td>{{ appt.appointment_date }}</td>
+          <td>{{ appt.appointment_time }}</td>
+          <td>{{ appt.firstName }} {{ appt.lastName }}</td>
+          <td>{{ appt.symptoms }}</td>
+          <td>
+            <a
+              href="{{ url_for('doctor_appointments_detail', apptID=appt.apptID) }}"
+              >View</a
+            >
+          </td>
+        </tr>
+        {% endfor %}
+      </table>
+      {% else %}
+      <p>No appointments scheduled.</p>
+      {% endif %}
+    </div>
+  </body>
+</html>

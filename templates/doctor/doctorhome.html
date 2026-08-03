@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Doctor Home - DeepChest</title>
+    <link rel="stylesheet" href="/static/style.css" />
+    <link rel="stylesheet" href="/static/doctor.css" />
+    <link rel="stylesheet" href="/static/logostyle.css" />
+  </head>
+  <body>
+    <nav>
+      <div class="logo">
+        <a href="/"
+          ><img
+            src="{{ url_for('static', filename='logo_DeepChest.png') }}"
+            class="logo-img"
+        /></a>
+        <div class="logo-text">DeepChest</div>
+      </div>
+      <div class="nav-links">
+        <a href="#">Home</a>
+        <a href="/doctor/appointments">Appointments</a>
+        <a href="/doctor/patients">My Patients</a>
+        <a href="/doctor/reports">Reports</a>
+        <a href="/doctor/ai_diagnosis">AI Diagnosis</a>
+        <div class="dropdown">
+          <button class="dropbtn">Account &#9662;</button>
+          <div class="dropdown-content">
+            <a href="/doctor/account">Manage Account</a>
+            <a href="/logout">Logout</a>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="doctor-home-content">
+      <h1>Welcome, Dr. {{ firstName }} {{ lastName }}!</h1>
+
+      <div class="search-bar-container">
+        <form method="GET" action="/search">
+          <input
+            type="text"
+            name="query"
+            class="search-bar"
+            placeholder="Search for appointments, or reports..."
+            autocomplete="off"
+          />
+          <button type="submit" class="search-btn">Search</button>
+        </form>
+      </div>
+    </div>
+  </body>
+</html>
