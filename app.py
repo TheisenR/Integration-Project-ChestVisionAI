@@ -6,19 +6,31 @@ import calendar
 import re
 from datetime import date, datetime, timedelta
 import json
-import tensorflow as tf 
-import cv2
-from cv2 import cvtColor, COLOR_BGR2RGB
 import numpy as np
-from tensorflow import keras
-from keras.utils import load_img, img_to_array
-import matplotlib as plt
-import matplotlib.pyplot as plt
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
 from io import BytesIO
 from datetime import datetime
+
+try:
+    import tensorflow as tf
+    import cv2
+    from cv2 import cvtColor, COLOR_BGR2RGB
+    from tensorflow import keras
+    from keras.utils import load_img, img_to_array
+    import matplotlib as plt
+    import matplotlib.pyplot as plt
+except Exception:
+    tf = None
+    cv2 = None
+    cvtColor = None
+    COLOR_BGR2RGB = None
+    keras = None
+    load_img = None
+    img_to_array = None
+    plt = None
+    matplotlib = None
 
 import os
 import base64
@@ -29,11 +41,11 @@ app.secret_key = os.getenv('SECRET_KEY', '09319bcf8f178797da4aa5feaa371018')  # 
 
 # Database connection config
 db_config = {
-    'host': os.getenv('DB_HOST', 'mysql://root:yHqliEvPfyYMKBsvbZEAosZCnDbqZRRd@gondola.proxy.rlwy.net:51582/deepchest'),
-    'port': int(os.getenv('DB_PORT', '51582')),
+    'host': os.getenv('DB_HOST', 'localhost'),
+    'port': int(os.getenv('DB_PORT', '3306')),
     'user': os.getenv('DB_USER', 'root'),
-    'password': os.getenv('DB_PASSWORD', 'yHqliEvPfyYMKBsvbZEAosZCnDbqZRRd'),
-    'database': os.getenv('DB_NAME', 'deepchest')
+    'password': os.getenv('DB_PASSWORD', 'test1234'),
+    'database': os.getenv('DB_NAME', 'DeepChest')
 }
 
 ssl_mode = os.getenv('DB_SSL_MODE', 'preferred').lower()
@@ -1355,42 +1367,50 @@ def doctor_search_reports():
 
 #AI Grad-CAM logic
 model_path = "model_1.keras"
-model = tf.keras.models.load_model(model_path)
 class_names = ["COVID19","NORMAL","PNEUMONIA","TUBERCOLOSIS"]
+model = None
+grad_model = None
 
 
-#New symbolic input
-input_tensor = keras.Input(shape=(224, 224, 3))
+def load_ai_model():
+    global model, grad_model
+    if model is not None and grad_model is not None:
+        return True
+    if tf is None or keras is None or cv2 is None:
+        return False
+    if not os.path.exists(model_path):
+        return False
+    try:
+        model = tf.keras.models.load_model(model_path)
+        input_tensor = keras.Input(shape=(224, 224, 3))
+        x = input_tensor
+        last_conv_output = None
+        for layer in model.layers:
+            x = layer(x)
+            if layer.name == "last_conv":
+                last_conv_output = x
+        predictions = x
+        grad_model = keras.Model(inputs=input_tensor, outputs=[last_conv_output, predictions])
+        return True
+    except Exception:
+        return False
 
-# tracking last_conv output
-x = input_tensor
-last_conv_output = None
-
-for layer in model.layers:
-    x = layer(x)
-    if layer.name == "last_conv":
-        last_conv_output = x
-
-predictions = x  # this is the output of the last Dense layer
-
-grad_model = keras.Model(
-    inputs=input_tensor,
-    outputs=[last_conv_output, predictions]
-)
+load_ai_model()
 
 def preprocess_input(file_storage):
+    if load_img is None or img_to_array is None:
+        raise RuntimeError("AI dependencies are not available")
     file_storage.seek(0)
     img = load_img(file_storage, target_size=(224,224))
     img_array = img_to_array(img) / 255.0
-    img_array = np.expand_dims(img_array, axis=0) #it will put the img (1,224,244,3) = (1, heights,width,channels), the number one means the number of batch
+    img_array = np.expand_dims(img_array, axis=0)
     img_uint8 = img_to_array(img).astype("uint8")
     return img_array, img_uint8
 
 
 def make_gradcam_heatmap(img_array):
-  #grad_model = keras.Model(
-  #inputs=input_tensor, outputs = [last_conv_output, predictions] #give out a grad and prediction probs
-#)
+    if tf is None or grad_model is None:
+        raise RuntimeError("AI model is not available")
     img_tensor = tf.convert_to_tensor(img_array, dtype=tf.float32)
     
     with tf.GradientTape() as tape:
@@ -1417,6 +1437,8 @@ def make_gradcam_heatmap(img_array):
     return heatmap.numpy(), preds.numpy()
 
 def gradcam_overlay(img_uint8, heatmap):
+    if cv2 is None:
+        raise RuntimeError("OpenCV is not available")
     h,w,_=img_uint8.shape
     heatmap_resized = cv2.resize(heatmap, (w,h))
     heatmap_color = cv2.applyColorMap(
@@ -1436,6 +1458,8 @@ def overlay_png(overlay_bgr):
     return buf.read()
 
 def predict2(xray_bytes):
+    if not load_ai_model():
+        raise RuntimeError("AI model is not available")
     file_like = BytesIO(xray_bytes)
 
     img_array, img_uint8 = preprocess_input(file_like)
