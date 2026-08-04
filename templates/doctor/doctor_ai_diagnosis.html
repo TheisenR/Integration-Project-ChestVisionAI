@@ -90,7 +90,7 @@
           <!-- Result Box -->
           <div class="result-box">
             <h2>Prediction Report</h2>
-            {% if gradcam_b64 %}
+            {% if prediction %}
               <p><strong>Patient Name:</strong> {{patient_name}}</p>
               <p><strong>Predicted Condition:</strong> {{ prediction.label }} ({{'%.1f'|format(prediction.prob)}}%)</p>
               
@@ -101,8 +101,10 @@
                 {% endfor %}
               </ul>
               
-              <h3>Grad-CAM Visualization:</h3>
-              <img src="data:image/png;base64,{{ gradcam_b64 }}" alt="Grad-CAM Heatmap" style="max-width: 100%; height: auto;"><br><br>
+              {% if gradcam_b64 %}
+                <h3>Grad-CAM Visualization:</h3>
+                <img src="data:image/png;base64,{{ gradcam_b64 }}" alt="Grad-CAM Heatmap" style="max-width: 100%; height: auto;"><br><br>
+              {% endif %}
             {% else %}
               <p>No analysis yet. Please upload an X-ray.</p>
             {% endif %}

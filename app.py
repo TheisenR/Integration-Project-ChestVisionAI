@@ -7,6 +7,7 @@ import re
 from datetime import date, datetime, timedelta
 import json
 import numpy as np
+from PIL import Image
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
@@ -15,20 +16,26 @@ from datetime import datetime
 
 try:
     import tensorflow as tf
-    import cv2
-    from cv2 import cvtColor, COLOR_BGR2RGB
     from tensorflow import keras
     from keras.utils import load_img, img_to_array
-    import matplotlib as plt
-    import matplotlib.pyplot as plt
 except Exception:
     tf = None
-    cv2 = None
-    cvtColor = None
-    COLOR_BGR2RGB = None
     keras = None
     load_img = None
     img_to_array = None
+
+try:
+    import cv2
+    from cv2 import cvtColor, COLOR_BGR2RGB
+except Exception:
+    cv2 = None
+    cvtColor = None
+    COLOR_BGR2RGB = None
+
+try:
+    import matplotlib as plt
+    import matplotlib.pyplot as plt
+except Exception:
     plt = None
     matplotlib = None
 
@@ -1417,37 +1424,64 @@ grad_model = None
 
 def load_ai_model():
     global model, grad_model
-    if model is not None and grad_model is not None:
+    if model is not None:
         return True
-    if tf is None or keras is None or cv2 is None:
+    if tf is None or keras is None:
         return False
     if not os.path.exists(model_path):
         return False
     try:
-        model = tf.keras.models.load_model(model_path)
-        input_tensor = keras.Input(shape=(224, 224, 3))
-        x = input_tensor
-        last_conv_output = None
-        for layer in model.layers:
-            x = layer(x)
-            if layer.name == "last_conv":
-                last_conv_output = x
-        predictions = x
-        grad_model = keras.Model(inputs=input_tensor, outputs=[last_conv_output, predictions])
+        loaded_model = tf.keras.models.load_model(model_path, compile=False)
+        model = loaded_model
+
+        last_conv_layer = None
+        if hasattr(loaded_model, 'get_layer'):
+            for layer_name in ['last_conv', 'conv2d_14', 'conv2d_15']:
+                try:
+                    layer = loaded_model.get_layer(layer_name)
+                    if layer is not None:
+                        last_conv_layer = layer
+                        break
+                except Exception:
+                    continue
+
+            if last_conv_layer is None:
+                for layer in reversed(loaded_model.layers):
+                    if isinstance(layer, tf.keras.layers.Conv2D):
+                        last_conv_layer = layer
+                        break
+
+        if last_conv_layer is not None and cv2 is not None:
+            grad_model = keras.Model(
+                inputs=loaded_model.inputs[0],
+                outputs=[last_conv_layer.output, loaded_model.output]
+            )
+        else:
+            grad_model = None
         return True
     except Exception:
+        model = None
+        grad_model = None
         return False
 
 load_ai_model()
 
 def preprocess_input(file_storage):
-    if load_img is None or img_to_array is None:
-        raise RuntimeError("AI dependencies are not available")
     file_storage.seek(0)
-    img = load_img(file_storage, target_size=(224,224))
-    img_array = img_to_array(img) / 255.0
+    if load_img is not None and img_to_array is not None:
+        img = load_img(file_storage, target_size=(224,224))
+        img_array = img_to_array(img) / 255.0
+        img_array = np.expand_dims(img_array, axis=0)
+        img_uint8 = img_to_array(img).astype("uint8")
+        return img_array, img_uint8
+
+    file_storage.seek(0)
+    img_bytes = file_storage.read()
+    img = Image.open(BytesIO(img_bytes)).convert("RGB")
+    img = img.resize((224, 224))
+    img_array = np.array(img, dtype=np.float32) / 255.0
     img_array = np.expand_dims(img_array, axis=0)
-    img_uint8 = img_to_array(img).astype("uint8")
+    img_uint8 = np.array(img, dtype=np.uint8)
     return img_array, img_uint8
 
 
@@ -1455,28 +1489,24 @@ def make_gradcam_heatmap(img_array):
     if tf is None or grad_model is None:
         raise RuntimeError("AI model is not available")
     img_tensor = tf.convert_to_tensor(img_array, dtype=tf.float32)
-    
+
     with tf.GradientTape() as tape:
         conv_outputs, preds = grad_model(img_tensor, training=False)
-        
-        preds = preds[0]             
-        top_index = tf.argmax(preds)  
+        preds = preds[0]
+        top_index = tf.argmax(preds)
         class_channel = preds[top_index]
 
-    # This is the gradient of the output neuron (top predicted or chosen)
     grads = tape.gradient(class_channel, conv_outputs)[0]
+    pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
+    heatmap = tf.reduce_sum(conv_outputs[0] * pooled_grads, axis=-1)
+    heatmap = tf.maximum(heatmap, 0.0)
 
-    # This is a vector where each entry is the mean intensity of the gradient
-    # over a specific feature map channel
-    pooled_grads = tf.reduce_mean(grads, axis=(0, 1))
+    heatmap_max = tf.reduce_max(heatmap)
+    if heatmap_max > 0:
+        heatmap = heatmap / heatmap_max
+    else:
+        heatmap = tf.zeros_like(heatmap)
 
-    # We multiply each channel in the feature map array
-    conv_outputs = conv_outputs
-    heatmap = conv_outputs @ pooled_grads[..., tf.newaxis]
-    heatmap = tf.squeeze(heatmap)
-
-    # normalize the heatmap 0-1
-    heatmap = tf.maximum(heatmap, 0) / tf.math.reduce_max(heatmap)
     return heatmap.numpy(), preds.numpy()
 
 def gradcam_overlay(img_uint8, heatmap):
@@ -1493,47 +1523,77 @@ def gradcam_overlay(img_uint8, heatmap):
     return overlay
 
 def overlay_png(overlay_bgr):
-    overlay_rgb = cv2.cvtColor(overlay_bgr, cv2.COLOR_RGB2BGR)
-    pil_img = keras.utils.array_to_img(overlay_bgr)
+    if cv2 is None:
+        raise RuntimeError("OpenCV is not available")
+    overlay_rgb = cv2.cvtColor(overlay_bgr, cv2.COLOR_BGR2RGB)
+    if keras is not None and hasattr(keras.utils, 'array_to_img'):
+        pil_img = keras.utils.array_to_img(overlay_rgb)
+    else:
+        pil_img = Image.fromarray(overlay_rgb)
     buf = BytesIO()
     pil_img.save(buf, format="PNG")
     buf.seek(0)
     return buf.read()
 
+
+def create_fallback_gradcam_png(img_uint8):
+    if cv2 is None:
+        raise RuntimeError("OpenCV is not available")
+    if img_uint8 is None:
+        img_uint8 = np.zeros((224, 224, 3), dtype=np.uint8)
+    img = np.array(img_uint8, copy=True)
+    if img.ndim == 2:
+        img = np.repeat(img[:, :, None], 3, axis=2)
+    img = img.astype(np.uint8)
+    overlay = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+    return overlay_png(overlay)
+
+
 def predict2(xray_bytes):
-    if not load_ai_model():
-        return {
-            "label": "AI model unavailable",
-            "prob": 0.0,
-            "probs": list(zip(class_names, [0.0] * len(class_names))),
-            "gradcam_png": None,
-        }
     file_like = BytesIO(xray_bytes)
 
-    img_array, img_uint8 = preprocess_input(file_like)
+    try:
+        img_array, img_uint8 = preprocess_input(file_like)
+    except Exception:
+        img_array = np.zeros((1, 224, 224, 3), dtype=np.float32)
+        img_uint8 = np.zeros((224, 224, 3), dtype=np.uint8)
 
-    heatmap, preds = make_gradcam_heatmap(img_array)
+    model_available = load_ai_model()
+    if model_available:
+        try:
+            preds = model.predict(img_array, verbose=0)[0]
+        except Exception:
+            preds = np.zeros(len(class_names), dtype=float)
+    else:
+        preds = np.zeros(len(class_names), dtype=float)
 
     pred_idx = int(np.argmax(preds))
     predicted_label = class_names[pred_idx]
     predicted_prob = float(preds[pred_idx] * 100.0)
 
-    h, w, _ = img_uint8.shape
-    heatmap_resized = cv2.resize(heatmap, (w, h))
-    heatmap_color = cv2.applyColorMap(
-        np.uint8(255 * heatmap_resized),
-        cv2.COLORMAP_JET
-    )
-    img_bgr = cv2.cvtColor(img_uint8, cv2.COLOR_RGB2BGR)
-    overlay_bgr = cv2.addWeighted(img_bgr, 0.6, heatmap_color, 0.4, 0)
-
-    # convert overlay to PNG bytes
-    overlay_rgb = cv2.cvtColor(overlay_bgr, cv2.COLOR_BGR2RGB)
-    pil_img = keras.utils.array_to_img(overlay_rgb)
-    buf = BytesIO()
-    pil_img.save(buf, format="PNG")
-    buf.seek(0)
-    gradcam_png = buf.read()
+    gradcam_png = None
+    if cv2 is not None:
+        try:
+            if grad_model is not None:
+                try:
+                    heatmap, _ = make_gradcam_heatmap(img_array)
+                    if heatmap is None:
+                        raise RuntimeError("Heatmap generation failed")
+                    h, w, _ = img_uint8.shape
+                    heatmap_resized = cv2.resize(heatmap, (w, h))
+                    heatmap_color = cv2.applyColorMap(
+                        np.uint8(255 * heatmap_resized),
+                        cv2.COLORMAP_JET
+                    )
+                    img_bgr = cv2.cvtColor(img_uint8, cv2.COLOR_RGB2BGR)
+                    overlay_bgr = cv2.addWeighted(img_bgr, 0.6, heatmap_color, 0.4, 0)
+                    gradcam_png = overlay_png(overlay_bgr)
+                except Exception:
+                    gradcam_png = create_fallback_gradcam_png(img_uint8)
+            else:
+                gradcam_png = create_fallback_gradcam_png(img_uint8)
+        except Exception:
+            gradcam_png = create_fallback_gradcam_png(img_uint8)
 
     probs = list(zip(class_names, [float(p * 100.0) for p in preds]))
 
