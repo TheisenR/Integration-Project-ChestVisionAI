@@ -1,6 +1,5 @@
 from time import time
 from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file, jsonify
-from flask_cors import CORS
 import mysql.connector
 import webbrowser
 import calendar
@@ -50,7 +49,13 @@ from urllib.parse import urlparse, unquote, parse_qs
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', '09319bcf8f178797da4aa5feaa371018')  # Needed for flash messages and sessions
-CORS(app, resources={r"/*": {"origins": "*"}})
+
+@app.after_request
+def add_cors_headers(response):
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+    return response
 
 def build_db_config():
     def parse_connection_string(value):
