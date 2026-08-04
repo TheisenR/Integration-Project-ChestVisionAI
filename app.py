@@ -34,27 +34,46 @@ except Exception:
 
 import os
 import base64
+from urllib.parse import urlparse, unquote, parse_qs
 
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', '09319bcf8f178797da4aa5feaa371018')  # Needed for flash messages and sessions
 
-# Database connection config
-db_config = {
-    'host': os.getenv('DB_HOST', 'localhost'),
-    'port': int(os.getenv('DB_PORT', '3306')),
-    'user': os.getenv('DB_USER', 'root'),
-    'password': os.getenv('DB_PASSWORD', 'test1234'),
-    'database': os.getenv('DB_NAME', 'DeepChest')
-}
+def build_db_config():
+    database_url = os.getenv('DATABASE_URL') or os.getenv('DB_URL')
+    if database_url:
+        parsed = urlparse(database_url)
+        if parsed.scheme.startswith('mysql'):
+            query = parse_qs(parsed.query)
+            ssl_mode = (query.get('ssl_mode', [os.getenv('DB_SSL_MODE', 'preferred')])[0] or 'preferred').lower()
+            return {
+                'host': parsed.hostname or os.getenv('DB_HOST', 'localhost'),
+                'port': parsed.port or int(os.getenv('DB_PORT', '3306')),
+                'user': unquote(parsed.username or os.getenv('DB_USER', 'root')),
+                'password': unquote(parsed.password or os.getenv('DB_PASSWORD', 'test1234')),
+                'database': parsed.path.lstrip('/') or os.getenv('DB_NAME', 'DeepChest'),
+                'ssl_disabled': ssl_mode == 'disabled'
+            }
 
-ssl_mode = os.getenv('DB_SSL_MODE', 'preferred').lower()
-if ssl_mode == 'required':
-    db_config['ssl_disabled'] = False
-elif ssl_mode == 'disabled':
-    db_config['ssl_disabled'] = True
-else:
-    db_config['ssl_disabled'] = False
+    ssl_mode = os.getenv('DB_SSL_MODE', 'preferred').lower()
+    db_config = {
+        'host': os.getenv('DB_HOST', 'localhost'),
+        'port': int(os.getenv('DB_PORT', '3306')),
+        'user': os.getenv('DB_USER', 'root'),
+        'password': os.getenv('DB_PASSWORD', 'test1234'),
+        'database': os.getenv('DB_NAME', 'DeepChest')
+    }
+    if ssl_mode == 'required':
+        db_config['ssl_disabled'] = False
+    elif ssl_mode == 'disabled':
+        db_config['ssl_disabled'] = True
+    else:
+        db_config['ssl_disabled'] = False
+    return db_config
+
+
+db_config = build_db_config()
 
 # Configures Route for the home page
 @app.route('/')
@@ -64,6 +83,19 @@ def home():
 @app.route('/health')
 def health():
     return jsonify(status='ok')
+
+@app.route('/health/db')
+def health_db():
+    try:
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor()
+        cursor.execute('SELECT 1')
+        cursor.fetchone()
+        cursor.close()
+        conn.close()
+        return jsonify(status='ok', database=db_config.get('database'))
+    except Exception as exc:
+        return jsonify(status='error', error=str(exc)), 500
 
 # Configures Route for the login page 
 @app.route('/login', methods=['GET', 'POST'])
