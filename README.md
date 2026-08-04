@@ -1,6 +1,6 @@
-# DeepChest - AI-Powered Chest X-Ray Diagnostic System
+# RespiScan(FKA DeepChest) - AI-Powered Chest X-Ray Diagnostic System
 
-DeepChest is a comprehensive Flask-based medical web application that provides AI-assisted chest X-ray diagnostics using deep learning. The system integrates TensorFlow/Keras models with Grad-CAM visualization to detect COVID-19, Pneumonia, Tuberculosis, and Normal chest conditions. It includes complete clinic management functionality for patients, doctors, and clinic administrators.
+RespiScan is a comprehensive Flask-based medical web application that provides AI-assisted chest X-ray diagnostics using deep learning. The system integrates TensorFlow/Keras models with Grad-CAM visualization to detect COVID-19, Pneumonia, Tuberculosis, and Normal chest conditions. It includes complete clinic management functionality for patients, doctors, and clinic administrators.
 
 ## Features
 
