@@ -14,9 +14,11 @@ from reportlab.lib.utils import ImageReader
 from io import BytesIO
 from datetime import datetime
 
+os.environ.setdefault('TF_CPP_MIN_LOG_LEVEL', '3')
+
 try:
     import tensorflow as tf
-    from tensorflow import keras
+    import keras
     from keras.utils import load_img, img_to_array
 except Exception:
     tf = None
@@ -1432,8 +1434,17 @@ def load_ai_model():
         return False
     try:
         loaded_model = tf.keras.models.load_model(model_path, compile=False)
-        model = loaded_model
+    except Exception as exc:
+        try:
+            loaded_model = keras.models.load_model(model_path, compile=False)
+        except Exception as exc2:
+            print(f"AI model load failed: {exc2}")
+            model = None
+            grad_model = None
+            return False
 
+    try:
+        model = loaded_model
         last_conv_layer = None
         if hasattr(loaded_model, 'get_layer'):
             for layer_name in ['last_conv', 'conv2d_14', 'conv2d_15']:
@@ -1447,22 +1458,31 @@ def load_ai_model():
 
             if last_conv_layer is None:
                 for layer in reversed(loaded_model.layers):
-                    if isinstance(layer, tf.keras.layers.Conv2D):
-                        last_conv_layer = layer
-                        break
+                    try:
+                        if hasattr(layer, 'output') and hasattr(layer, 'name'):
+                            if 'conv' in layer.name.lower() or 'block' in layer.name.lower():
+                                last_conv_layer = layer
+                                break
+                    except Exception:
+                        continue
 
-        if last_conv_layer is not None and cv2 is not None:
+        input_tensor = None
+        if hasattr(loaded_model, 'inputs') and loaded_model.inputs:
+            input_tensor = loaded_model.inputs[0]
+
+        if last_conv_layer is not None and cv2 is not None and input_tensor is not None:
             grad_model = keras.Model(
-                inputs=loaded_model.inputs[0],
+                inputs=input_tensor,
                 outputs=[last_conv_layer.output, loaded_model.output]
             )
         else:
             grad_model = None
         return True
-    except Exception:
-        model = None
+    except Exception as exc:
+        print(f"AI Grad-CAM setup failed: {exc}")
+        model = loaded_model
         grad_model = None
-        return False
+        return True
 
 load_ai_model()
 
