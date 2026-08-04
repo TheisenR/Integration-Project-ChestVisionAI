@@ -1599,14 +1599,19 @@ def predict(file):
 def get_xray(xray_id):
     conn = mysql.connector.connect(**db_config)
     cursor = conn.cursor()
-    cursor.execute("SELECT files from xrays where xrayID = %s", (xray_id,))
-    row = cursor.fetchone()
+    for table_name in ['xrays', 'Xrays']:
+        try:
+            cursor.execute(f"SELECT files FROM {table_name} WHERE xrayID = %s", (xray_id,))
+            row = cursor.fetchone()
+            if row:
+                cursor.close()
+                conn.close()
+                return row[0]
+        except Exception:
+            continue
     cursor.close()
     conn.close()
-
-    if not row:
-        return None
-    return row[0]
+    return None
 
 def generate_report(patient, doctor_note, xray_bytes, ai_prediction=None, pdf_title=None, clinic=None):
     buffer = BytesIO()
@@ -1759,11 +1764,22 @@ def doctor_report_generation():
             }
     
     #get x-ray
-    cursor.execute("SELECT files FROM xrays WHERE patientID = %s ORDER BY date DESC LIMIT 1", (patient_id,))
-    #xray = cursor.fetchone()[0]
-    #cursor.execute("SELECT files FROM xrays WHERE xrayID = %s", (xray_id,))
-    file = cursor.fetchone()
-    xray_bytes = file[0]
+    xray_bytes = None
+    for table_name in ['xrays', 'Xrays']:
+        try:
+            cursor.execute(f"SELECT files FROM {table_name} WHERE patientID = %s ORDER BY date DESC LIMIT 1", (patient_id,))
+            file = cursor.fetchone()
+            if file:
+                xray_bytes = file[0]
+                break
+        except Exception:
+            continue
+
+    if xray_bytes is None:
+        cursor.close()
+        conn.close()
+        flash('No x-ray record found for that patient.')
+        return redirect(url_for('doctor_ai_diagnosis'))
 
     # Generate AI prediction
     ai_prediction = None
@@ -1827,16 +1843,28 @@ def doctor_ai_diagnosis():
             conn = mysql.connector.connect(**db_config)
             cursor = conn.cursor()
             cursor.execute("SELECT USERID FROM patient WHERE CONCAT(firstName, ' ', lastName) = %s", (patient_name,))
-            patient_id = cursor.fetchone()[0]
+            patient_row = cursor.fetchone()
+            patient_id = patient_row[0] if patient_row else None
             if not patient_id:
                 cursor.close()
                 conn.close()
                 flash('Patient not found.')
+                return redirect(request.url)
 
             else:
-                cursor.execute("""
-                           INSERT INTO xrays (patientID, doctorID, date, expires_at, files) VALUES (%s, %s, %s, %s, %s)""", 
-                           (patient_id,doctor_id, datetime.now(),expiry_date, xray_bytes))
+                for table_name in ['xrays', 'Xrays']:
+                    try:
+                        cursor.execute(f"""
+                           INSERT INTO {table_name} (patientID, doctorID, date, expires_at, files) VALUES (%s, %s, %s, %s, %s)""",
+                           (patient_id, doctor_id, datetime.now(), expiry_date, xray_bytes))
+                        break
+                    except Exception:
+                        continue
+                else:
+                    cursor.close()
+                    conn.close()
+                    raise RuntimeError('No compatible x-ray table exists in the database')
+
                 conn.commit()
                 cursor.close()
                 conn.close()
