@@ -179,7 +179,7 @@ DeepChest Local/
 
 ## GitHub Pages + Render setup
 
-This repository is now prepared for a two-part deployment:
+This repository is prepared for a two-part deployment:
 - GitHub Pages hosts the static landing page.
 - Render hosts the Flask app and AI backend.
 
@@ -193,11 +193,12 @@ This repository is now prepared for a two-part deployment:
    ```
 5. Add environment variables such as SECRET_KEY and your database settings.
 
-### 2. Enable GitHub Pages
+### 2. Enable GitHub Pages without Actions
 1. Go to your GitHub repository settings.
 2. Open Pages.
-3. Choose GitHub Actions as the deployment source.
-4. Push to the main branch to publish the site.
+3. Select the branch-based deployment source.
+4. Choose the main branch and the docs folder as the publish source.
+5. Save the settings.
 
 ### 3. Point the landing page to your Render backend
 Open [docs/config.js](docs/config.js) and replace the placeholder URL with your Render app URL, for example:
