@@ -1,10 +1,10 @@
-FROM python:3.10-slim
+FROM tensorflow/tensorflow:2.15.0
 
 WORKDIR /app
 
 COPY . /app
 
-RUN pip install --upgrade pip && pip install --no-cache-dir -r requirement.txt
+RUN apt-get update && apt-get install -y libgl1 libglib2.0-0 && pip install --upgrade pip && pip install --no-cache-dir -r requirement.txt
 
 EXPOSE 10000
 

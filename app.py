@@ -1408,7 +1408,8 @@ def doctor_search_reports():
     )
 
 #AI Grad-CAM logic
-model_path = "model_1.keras"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+model_path = os.path.join(BASE_DIR, "model_1.keras")
 class_names = ["COVID19","NORMAL","PNEUMONIA","TUBERCOLOSIS"]
 model = None
 grad_model = None
@@ -1501,7 +1502,12 @@ def overlay_png(overlay_bgr):
 
 def predict2(xray_bytes):
     if not load_ai_model():
-        raise RuntimeError("AI model is not available")
+        return {
+            "label": "AI model unavailable",
+            "prob": 0.0,
+            "probs": list(zip(class_names, [0.0] * len(class_names))),
+            "gradcam_png": None,
+        }
     file_like = BytesIO(xray_bytes)
 
     img_array, img_uint8 = preprocess_input(file_like)
@@ -1870,7 +1876,10 @@ def doctor_ai_diagnosis():
                 conn.close()
                 pred_result = predict2(xray_bytes)
                 prediction = pred_result
-                gradcam_b64 = base64.b64encode(pred_result["gradcam_png"]).decode('utf-8')
+                if pred_result.get("gradcam_png"):
+                    gradcam_b64 = base64.b64encode(pred_result["gradcam_png"]).decode('utf-8')
+                else:
+                    gradcam_b64 = None
 
     return render_template(
         'doctor/doctor_ai_diagnosis.html',
