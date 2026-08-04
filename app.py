@@ -30,10 +30,19 @@ app.secret_key = os.getenv('SECRET_KEY', 'change-me-in-production')  # Needed fo
 # Database connection config
 db_config = {
     'host': os.getenv('DB_HOST', 'localhost'),
+    'port': int(os.getenv('DB_PORT', '3306')),
     'user': os.getenv('DB_USER', 'root'),
     'password': os.getenv('DB_PASSWORD', 'test1234'),
     'database': os.getenv('DB_NAME', 'DeepChest')
 }
+
+ssl_mode = os.getenv('DB_SSL_MODE', 'preferred').lower()
+if ssl_mode == 'required':
+    db_config['ssl_disabled'] = False
+elif ssl_mode == 'disabled':
+    db_config['ssl_disabled'] = True
+else:
+    db_config['ssl_disabled'] = False
 
 # Configures Route for the home page
 @app.route('/')
