@@ -1512,20 +1512,31 @@ def make_gradcam_heatmap(img_array):
 def gradcam_overlay(img_uint8, heatmap):
     if cv2 is None:
         raise RuntimeError("OpenCV is not available")
-    h,w,_=img_uint8.shape
-    heatmap_resized = cv2.resize(heatmap, (w,h))
+    h, w, _ = img_uint8.shape
+    heatmap_resized = cv2.resize(heatmap, (w, h))
     heatmap_color = cv2.applyColorMap(
-        np.uint8(255*heatmap_resized),
+        np.uint8(255 * heatmap_resized),
         cv2.COLORMAP_JET
     )
     img_bgr = cv2.cvtColor(img_uint8, cv2.COLOR_RGB2BGR)
     overlay = cv2.addWeighted(img_bgr, 0.6, heatmap_color, 0.4, 0)
     return overlay
 
+
 def overlay_png(overlay_bgr):
-    if cv2 is None:
-        raise RuntimeError("OpenCV is not available")
-    overlay_rgb = cv2.cvtColor(overlay_bgr, cv2.COLOR_BGR2RGB)
+    if overlay_bgr is None:
+        overlay_bgr = np.zeros((224, 224, 3), dtype=np.uint8)
+
+    overlay_array = np.array(overlay_bgr, copy=True)
+    if overlay_array.ndim == 2:
+        overlay_array = np.repeat(overlay_array[:, :, None], 3, axis=2)
+    overlay_array = overlay_array.astype(np.uint8)
+
+    if cv2 is not None and cvtColor is not None and COLOR_BGR2RGB is not None:
+        overlay_rgb = cv2.cvtColor(overlay_array, cv2.COLOR_BGR2RGB)
+    else:
+        overlay_rgb = overlay_array
+
     if keras is not None and hasattr(keras.utils, 'array_to_img'):
         pil_img = keras.utils.array_to_img(overlay_rgb)
     else:
@@ -1537,16 +1548,13 @@ def overlay_png(overlay_bgr):
 
 
 def create_fallback_gradcam_png(img_uint8):
-    if cv2 is None:
-        raise RuntimeError("OpenCV is not available")
     if img_uint8 is None:
         img_uint8 = np.zeros((224, 224, 3), dtype=np.uint8)
     img = np.array(img_uint8, copy=True)
     if img.ndim == 2:
         img = np.repeat(img[:, :, None], 3, axis=2)
     img = img.astype(np.uint8)
-    overlay = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-    return overlay_png(overlay)
+    return overlay_png(img)
 
 
 def predict2(xray_bytes):
@@ -1572,28 +1580,18 @@ def predict2(xray_bytes):
     predicted_prob = float(preds[pred_idx] * 100.0)
 
     gradcam_png = None
-    if cv2 is not None:
-        try:
-            if grad_model is not None:
-                try:
-                    heatmap, _ = make_gradcam_heatmap(img_array)
-                    if heatmap is None:
-                        raise RuntimeError("Heatmap generation failed")
-                    h, w, _ = img_uint8.shape
-                    heatmap_resized = cv2.resize(heatmap, (w, h))
-                    heatmap_color = cv2.applyColorMap(
-                        np.uint8(255 * heatmap_resized),
-                        cv2.COLORMAP_JET
-                    )
-                    img_bgr = cv2.cvtColor(img_uint8, cv2.COLOR_RGB2BGR)
-                    overlay_bgr = cv2.addWeighted(img_bgr, 0.6, heatmap_color, 0.4, 0)
-                    gradcam_png = overlay_png(overlay_bgr)
-                except Exception:
-                    gradcam_png = create_fallback_gradcam_png(img_uint8)
-            else:
-                gradcam_png = create_fallback_gradcam_png(img_uint8)
-        except Exception:
+    try:
+        if grad_model is not None and cv2 is not None:
+            try:
+                heatmap, _ = make_gradcam_heatmap(img_array)
+                overlay_bgr = gradcam_overlay(img_uint8, heatmap)
+                gradcam_png = overlay_png(overlay_bgr)
+            except Exception:
+                gradcam_png = None
+        if gradcam_png is None:
             gradcam_png = create_fallback_gradcam_png(img_uint8)
+    except Exception:
+        gradcam_png = create_fallback_gradcam_png(img_uint8)
 
     probs = list(zip(class_names, [float(p * 100.0) for p in preds]))
 
