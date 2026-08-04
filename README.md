@@ -177,6 +177,36 @@ DeepChest Local/
 - **Visualization**: Grad-CAM heatmaps highlight diagnostic regions
 - **Model File**: `model_1.keras` (TensorFlow/Keras format)
 
+## GitHub Pages + Render setup
+
+This repository is now prepared for a two-part deployment:
+- GitHub Pages hosts the static landing page.
+- Render hosts the Flask app and AI backend.
+
+### 1. Deploy the Flask app on Render
+1. Create a new Render Web Service.
+2. Connect this GitHub repository.
+3. Choose the service type for the Flask app.
+4. Set the start command to:
+   ```bash
+   gunicorn app:app
+   ```
+5. Add environment variables such as SECRET_KEY and your database settings.
+
+### 2. Enable GitHub Pages
+1. Go to your GitHub repository settings.
+2. Open Pages.
+3. Choose GitHub Actions as the deployment source.
+4. Push to the main branch to publish the site.
+
+### 3. Point the landing page to your Render backend
+Open [docs/config.js](docs/config.js) and replace the placeholder URL with your Render app URL, for example:
+```js
+window.API_BASE_URL = 'https://your-render-app.onrender.com';
+```
+
+The static page will test the backend health endpoint automatically.
+
 ## Security Notes
 
 ⚠️ **Important**: Before deploying to production:

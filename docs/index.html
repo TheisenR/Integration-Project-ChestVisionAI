@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DeepChest</title>
+    <meta name="description" content="DeepChest landing page for GitHub Pages with Render backend integration." />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="config.js"></script>
+  </head>
+  <body>
+    <main class="hero">
+      <section class="card">
+        <p class="eyebrow">GitHub Pages + Render</p>
+        <h1>DeepChest</h1>
+        <p class="lead">
+          This static landing page is hosted on GitHub Pages. The full Flask AI app runs separately on Render.
+        </p>
+
+        <div class="actions">
+          <a class="button primary" href="https://github.com/" target="_blank" rel="noreferrer">View Repository</a>
+          <a class="button secondary" id="backend-link" href="https://deepchest.onrender.com">Open Render Backend</a>
+        </div>
+
+        <div id="status" class="status">Checking backend connection…</div>
+
+        <ul class="features">
+          <li>Static landing page on GitHub Pages</li>
+          <li>Flask app served from Render</li>
+          <li>Backend health check from the frontend</li>
+        </ul>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
