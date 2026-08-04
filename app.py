@@ -25,15 +25,15 @@ import base64
 
 
 app = Flask(__name__)
-app.secret_key = os.getenv('SECRET_KEY', 'change-me-in-production')  # Needed for flash messages and sessions
+app.secret_key = os.getenv('SECRET_KEY', '09319bcf8f178797da4aa5feaa371018')  # Needed for flash messages and sessions
 
 # Database connection config
 db_config = {
-    'host': os.getenv('DB_HOST', 'localhost'),
-    'port': int(os.getenv('DB_PORT', '3306')),
+    'host': os.getenv('DB_HOST', 'mysql://root:yHqliEvPfyYMKBsvbZEAosZCnDbqZRRd@gondola.proxy.rlwy.net:51582/deepchest'),
+    'port': int(os.getenv('DB_PORT', '51582')),
     'user': os.getenv('DB_USER', 'root'),
-    'password': os.getenv('DB_PASSWORD', 'test1234'),
-    'database': os.getenv('DB_NAME', 'DeepChest')
+    'password': os.getenv('DB_PASSWORD', 'yHqliEvPfyYMKBsvbZEAosZCnDbqZRRd'),
+    'database': os.getenv('DB_NAME', 'deepchest')
 }
 
 ssl_mode = os.getenv('DB_SSL_MODE', 'preferred').lower()
