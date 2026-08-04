@@ -41,20 +41,30 @@ app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', '09319bcf8f178797da4aa5feaa371018')  # Needed for flash messages and sessions
 
 def build_db_config():
-    database_url = os.getenv('DATABASE_URL') or os.getenv('DB_URL')
-    if database_url:
-        parsed = urlparse(database_url)
-        if parsed.scheme.startswith('mysql'):
-            query = parse_qs(parsed.query)
-            ssl_mode = (query.get('ssl_mode', [os.getenv('DB_SSL_MODE', 'preferred')])[0] or 'preferred').lower()
-            return {
-                'host': parsed.hostname or os.getenv('DB_HOST', 'localhost'),
-                'port': parsed.port or int(os.getenv('DB_PORT', '3306')),
-                'user': unquote(parsed.username or os.getenv('DB_USER', 'root')),
-                'password': unquote(parsed.password or os.getenv('DB_PASSWORD', 'test1234')),
-                'database': parsed.path.lstrip('/') or os.getenv('DB_NAME', 'DeepChest'),
-                'ssl_disabled': ssl_mode == 'disabled'
-            }
+    def parse_connection_string(value):
+        if not value or '://' not in value:
+            return None
+        try:
+            parsed = urlparse(value)
+        except Exception:
+            return None
+        if parsed.scheme not in {'mysql', 'mysql+mysqlconnector', 'mysql+pymysql'} and not parsed.scheme.startswith('mysql'):
+            return None
+        query = parse_qs(parsed.query)
+        ssl_mode = (query.get('ssl_mode', [os.getenv('DB_SSL_MODE', 'preferred')])[0] or 'preferred').lower()
+        return {
+            'host': parsed.hostname or os.getenv('DB_HOST', 'localhost'),
+            'port': parsed.port or int(os.getenv('DB_PORT', '3306')),
+            'user': unquote(parsed.username or os.getenv('DB_USER', 'root')),
+            'password': unquote(parsed.password or os.getenv('DB_PASSWORD', 'test1234')),
+            'database': parsed.path.lstrip('/') or os.getenv('DB_NAME', 'DeepChest'),
+            'ssl_disabled': ssl_mode == 'disabled'
+        }
+
+    for value in [os.getenv('DATABASE_URL'), os.getenv('DB_URL'), os.getenv('DB_HOST')]:
+        parsed_config = parse_connection_string(value)
+        if parsed_config:
+            return parsed_config
 
     ssl_mode = os.getenv('DB_SSL_MODE', 'preferred').lower()
     db_config = {
