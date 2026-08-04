@@ -4,6 +4,7 @@ import mysql.connector
 import webbrowser
 import calendar
 import re
+import os
 from datetime import date, datetime, timedelta
 import json
 import numpy as np
@@ -41,7 +42,6 @@ except Exception:
     plt = None
     matplotlib = None
 
-import os
 import base64
 from urllib.parse import urlparse, unquote, parse_qs
 
