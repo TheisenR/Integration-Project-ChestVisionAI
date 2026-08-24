@@ -1,0 +1,50 @@
+=====================================
+    SAMPLE LOGINS FOR ChestVision.AI
+=====================================
+
+PATIENT ACCOUNTS:
+-----------------
+Username: treddy
+Password: 1234
+User Type: patient
+User ID: 111
+
+Username: example
+Password: 1234
+User Type: patient
+User ID: 112
+
+
+DOCTOR ACCOUNTS:
+-----------------
+Username: doc1
+Password: 1234
+User Type: doctor
+User ID: 222
+
+
+CLINIC ADMIN ACCOUNTS:
+-----------------
+Username: admin1
+Password: 1234
+User Type: clinicadmin
+User ID: 333
+
+
+CLINIC INFORMATION:
+-----------------
+Clinic 1:
+  Clinic ID: 1000
+  Name: Westbrook Clinic
+  Address: 12345 82 Ave
+  City: Surrey
+  Province: BC
+  Postal Code: V3N0L3
+
+Clinic 2:
+  Clinic ID: 2000
+  Name: NorthEast Clinic
+  Address: 1354 162 ST
+  City: Vancouver
+  Province: BC
+  Postal Code: V5K0A1
